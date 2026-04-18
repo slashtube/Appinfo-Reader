@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "../include/parser.h"
+#include "../include/utils.h"
 
 
 int parse(char* filename) {
@@ -15,44 +16,39 @@ int parse(char* filename) {
     struct header head;
     int ret = parse_header(file, &head);
 
-    printf("header.magic: %x\n", head.magic);
-    printf("header.universe: %d\n", head.universe);
-    printf("header.offset: %ld\n", head.offset);
-
     if(ret < 3) {
         perror("Error while parsing header\n");
         return -1;
     }
 
+    print_header(head);
+
     // String table parsing if version is greater than 40
+    struct table tab; 
     if(head.magic > VERSION_40) {
-        struct table tab;
         parse_table(file, &tab, head.offset);
 
-        printf("\ntab.count: %d\n", tab.count);
-        printf("tab.strings: WIP \n");
+        print_table(tab);
     }
 
-    // Appentry parsing
+    // AppEntry parsing
     struct appentry entry;
 
-    entry.texthash = malloc(sizeof(char) * 20);
-    entry.binaryhash = malloc(sizeof(char) * 20);
+    init_appentry(&entry);
+    
+    int i = 0;
 
-    parse_entry(file, &entry, head.magic);
+    while(i < 1) {
+        parse_entry(file, &entry, head.magic);
+        print_entry(entry);
 
-    printf("\nentry.appid: %d\n", entry.appid);
-    printf("entry.size: %d\n", entry.size);
-    printf("entry.info: %d\n", entry.info);
-    printf("entry.lastupdate: %d\n", entry.lastupdate);
-    printf("entry.pics: %ld\n", entry.pics);
-    printf("entry.texthash: %s\n", entry.texthash);
-    printf("entry.changenum: %d\n", entry.changenum);
-    printf("entry.section: %d\n", entry.section);
-    printf("entry.binaryhash: %s\n", entry.binaryhash);
+        // TODO: Read binary VDF data
+        i++;
+    }
 
-    free(entry.binaryhash);
-    free(entry.texthash);
+
+    free_appentry(&entry);
+    free_table(&tab);
     fclose(file);
 
     return 0;
@@ -77,6 +73,10 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     fseek(file, offset, SEEK_SET);
     size_t ret = fread(tab, sizeof(tab->count), 1, file);
 
+    init_table(tab);
+
+    // TODO: Read null terminated strings
+
     // restores previous offset
     fseek(file, prev_offset, SEEK_SET);
 
@@ -84,20 +84,24 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     return ret;
 }
 
-int parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
+void parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
     entry->section = 0;
-    size_t ret = fread(entry, sizeof(entry->appid), 4, file);
-    ret += fread(entry, sizeof(entry->pics), 1, file);
-    ret += fread(entry, sizeof(char) * 20, 1, file);
-    ret += fread(entry, sizeof(entry->changenum), 1, file);
+
+    // TODO: check appid
+    fread(entry, sizeof(uint32_t), 4, file);
+
+    fread(&entry->pics, sizeof(entry->pics), 1, file);
+    fread(entry->texthash, sizeof(char), 20, file);
+    fread(&entry->changenum, sizeof(entry->changenum), 1, file);
 
     if(version < VERSION_38) {
-        ret += fread(entry, sizeof(entry->section), 1, file);
-    }
+        fread(&entry->section, sizeof(entry->section), 1, file);
+    } 
 
     if(version >= VERSION_40) {
-        ret += fread(entry, sizeof(char) * 20, 1, file);
+        fread(entry->binaryhash, sizeof(char), 20, file);
     }
 
-    return ret;
 }
+
+

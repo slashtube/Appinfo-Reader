@@ -21,6 +21,7 @@ SOURCE = \
 	main.c \
 	parser.c \
 	writer.c \
+    utils.c \
 
 INCLUDES = \
 	src \

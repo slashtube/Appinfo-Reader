@@ -20,7 +20,7 @@ struct table {
 
 struct appentry {
     uint32_t appid; // if 0, EOF
-    uint32_t size;
+    uint32_t size; // Size of app entry
     uint32_t info;
     uint32_t lastupdate;
     uint64_t pics;
@@ -34,6 +34,6 @@ struct appentry {
 int parse(char* filename);
 int parse_header(FILE* file, struct header* head);
 int parse_table(FILE* file, struct table* tab, long offset);
-int parse_entry(FILE* file, struct appentry* entry, uint32_t version);
+void parse_entry(FILE* file, struct appentry* entry, uint32_t version);
 
 #endif
