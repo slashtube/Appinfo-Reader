@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
+#include <arpa/inet.h>
 #include "../include/parser.h"
 #include "../include/utils.h"
 
 
 int parse(char* filename) {
-    FILE* file = fopen(filename, "r");
+    FILE* file = fopen(filename, "rb");
     if(!file) {
         perror("Error while opening specified file");
         return -1;
@@ -28,7 +30,6 @@ int parse(char* filename) {
     if(head.magic > VERSION_40) {
         parse_table(file, &tab, head.offset);
 
-        print_table(tab);
     }
 
     // AppEntry parsing
@@ -39,10 +40,18 @@ int parse(char* filename) {
     int i = 0;
 
     while(i < 1) {
-        parse_entry(file, &entry, head.magic);
+        // Appid check
+        fread(&entry.appid, sizeof(uint32_t), 1, file);
+        if(entry.appid == 0) {
+            break;
+            
+        }
+
+        size_t end = parse_entry(file, &entry, head.magic);
         print_entry(entry);
 
         // TODO: Read binary VDF data
+        readVDFBlob(file, end, tab);
         i++;
     }
 
@@ -73,9 +82,18 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     fseek(file, offset, SEEK_SET);
     size_t ret = fread(tab, sizeof(tab->count), 1, file);
 
+    print_table(*tab);
     init_table(tab);
 
-    // TODO: Read null terminated strings
+    for(uint32_t i = 0; i < tab->count; i++) {
+        readNullString(file, *(tab->strings + i));
+        // DEBUG
+         if( i < 10) {
+            printf("\n%s ", *(tab->strings + i));
+        }
+        
+    }
+
 
     // restores previous offset
     fseek(file, prev_offset, SEEK_SET);
@@ -84,11 +102,15 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     return ret;
 }
 
-void parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
+size_t parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
     entry->section = 0;
 
-    // TODO: check appid
-    fread(entry, sizeof(uint32_t), 4, file);
+
+    // Gets the end position of the cursor
+    fread(&entry->size, sizeof(uint32_t), 1, file);
+    size_t end = ftell(file) + entry->size;
+
+    fread(&entry->info, sizeof(uint32_t), 2, file);
 
     fread(&entry->pics, sizeof(entry->pics), 1, file);
     fread(entry->texthash, sizeof(char), 20, file);
@@ -102,6 +124,79 @@ void parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
         fread(entry->binaryhash, sizeof(char), 20, file);
     }
 
+
+    return end;
 }
 
+void readNullString(FILE* file, char* string) {
+    int i = 0;
+    char c;
+    while((c = fgetc(file)) != '\0') {
+        *(string + i++) = c;
+    }
+
+    *(string + i) = '\0';
+
+}
+
+size_t read_next(FILE* file, struct table tab) {
+    char type;
+    char pos;
+    char string[32];
+    char temp;
+    size_t read = 0;
+
+    // Gets type
+    read += fread(&type, sizeof(char), 1, file);
+
+    if(type == MAP_END) {
+        printf("}\n");
+        return read;
+    }
+
+    // Gets string 
+    read += fread(&pos, sizeof(char), 1, file);
+    if(pos != 0) {
+        printf("\t%s: ", *(tab.strings + pos));
+    }
+    
+
+
+    // Gets and writes value based on type
+    switch(type) {
+        case TYPE_MAP: 
+            read += fread(&temp, sizeof(char), 1, file);
+            if(temp == 0) {
+                printf("{\n");
+            }
+            break;
+        case TYPE_STRING: 
+            // Dunno what to do
+            readNullString(file, string);
+            read += strlen(string) + 1;
+            printf("\t%s,\n", string);
+            break;
+        case TYPE_INT: 
+            uint32_t value = 0;
+            fread(&value, sizeof(uint32_t), 1, file);
+            read += sizeof(uint32_t);
+
+            value = ntohl(value);
+            printf("%d,\n", value);
+            break;
+        default:
+            printf("\n");
+    }
+
+    return read;
+}
+
+void readVDFBlob(FILE* file, size_t end, struct table tab) {
+    const size_t bytes_to_read = end - ftell(file);
+    size_t read = 0;
+    while(read < bytes_to_read) {
+        read += read_next(file, tab);
+
+    }
+}
 

@@ -54,7 +54,6 @@ void print_header(struct header head) {
 
 void print_table(struct table tab) {
     printf("\ntab.count: %d\n", tab.count);
-    printf("tab.strings: WIP \n");
 }
 
 void print_entry(struct appentry entry) {
@@ -63,8 +62,8 @@ void print_entry(struct appentry entry) {
     printf("entry.info: %d\n", entry.info);
     print_UnixTime(entry.lastupdate);
     printf("entry.pics: %ld\n", entry.pics);
-    printf("entry.texthash: %s\n", entry.texthash);
+//    printf("entry.texthash: %s\n", entry.texthash);
     printf("entry.changenum: %d\n", entry.changenum);
     printf("entry.section: %d\n", entry.section);
-    printf("entry.binaryhash: %s\n", entry.binaryhash);
+ //   printf("entry.binaryhash: %s\n", entry.binaryhash);
 }

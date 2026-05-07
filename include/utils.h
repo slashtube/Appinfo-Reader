@@ -9,8 +9,10 @@
 
 void init_table(struct table* entry);
 void init_appentry(struct appentry* entry);
+
 void free_table(struct table* entry);
 void free_appentry(struct appentry* entry);
+
 void print_UnixTime(uint32_t lastupdate);
 void print_header(struct header head);
 void print_table(struct table tab);
