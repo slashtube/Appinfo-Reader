@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
 #include <time.h>
 #include "../include/utils.h"
 
@@ -67,3 +69,34 @@ void print_entry(struct appentry entry) {
     printf("entry.section: %d\n", entry.section);
  //   printf("entry.binaryhash: %s\n", entry.binaryhash);
 }
+
+size_t read_int(FILE* file) {
+    uint32_t value = 0;
+    size_t read = 0;
+
+    fread(&value, sizeof(uint32_t), 1, file);
+    read += sizeof(uint32_t);
+
+    //value = ntohl(value);
+    printf("%d,\n", value);
+
+    return read;
+}
+
+size_t read_string(FILE* file) {
+    size_t read = 0;
+    char temp;
+    char string[32];
+
+    // 3 zeros to mark beginning of string
+    read += fread(&temp, sizeof(char), 3, file);
+
+    readNullString(file, string);
+    read += strlen(string) + 1;
+    printf("'%s',\n", string);
+
+    return read;
+}
+
+
+

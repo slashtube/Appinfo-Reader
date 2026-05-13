@@ -10,6 +10,7 @@
 #define TYPE_MAP 0x00
 #define TYPE_STRING 0x01
 #define TYPE_INT 0x02
+#define TYPE_UINT64 0x07
 #define MAP_END 0x08
 
 struct header {

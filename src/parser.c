@@ -44,13 +44,11 @@ int parse(char* filename) {
         fread(&entry.appid, sizeof(uint32_t), 1, file);
         if(entry.appid == 0) {
             break;
-            
         }
 
         size_t end = parse_entry(file, &entry, head.magic);
         print_entry(entry);
 
-        // TODO: Read binary VDF data
         readVDFBlob(file, end, tab);
         i++;
     }
@@ -88,9 +86,10 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     for(uint32_t i = 0; i < tab->count; i++) {
         readNullString(file, *(tab->strings + i));
         // DEBUG
-         if( i < 10) {
+         /*if( i > 90 && i < 120) {
             printf("\n%s ", *(tab->strings + i));
         }
+        */
         
     }
 
@@ -141,52 +140,42 @@ void readNullString(FILE* file, char* string) {
 
 size_t read_next(FILE* file, struct table tab) {
     char type;
-    char pos;
-    char string[32];
-    char temp;
+    uint32_t pos;
     size_t read = 0;
 
     // Gets type
     read += fread(&type, sizeof(char), 1, file);
 
-    if(type == MAP_END) {
-        printf("}\n");
-        return read;
+    while(type != MAP_END) {
+        // String deduplication
+        fread(&pos, sizeof(uint32_t), 1, file);
+        read += 4;
+        char* string = *(tab.strings + pos);
+        if(string != NULL && pos != 0) {
+            printf("\t%s: ", string);
+        }
+
+        // Gets and writes value based on type
+        switch(type) {
+            case TYPE_MAP: 
+                printf("{\n ");
+                read += read_next(file, tab);
+                return read;
+            case TYPE_STRING: 
+                read += read_string(file);
+                break;
+            case TYPE_INT: 
+                read += read_int(file);
+                break;
+            default:
+                printf("Type: %x not supported", type);
+        }
+
+        read += fread(&type, sizeof(char), 1, file);
     }
 
-    // Gets string 
-    read += fread(&pos, sizeof(char), 1, file);
-    if(pos != 0) {
-        printf("\t%s: ", *(tab.strings + pos));
-    }
-    
-
-
-    // Gets and writes value based on type
-    switch(type) {
-        case TYPE_MAP: 
-            read += fread(&temp, sizeof(char), 1, file);
-            if(temp == 0) {
-                printf("{\n");
-            }
-            break;
-        case TYPE_STRING: 
-            // Dunno what to do
-            readNullString(file, string);
-            read += strlen(string) + 1;
-            printf("\t%s,\n", string);
-            break;
-        case TYPE_INT: 
-            uint32_t value = 0;
-            fread(&value, sizeof(uint32_t), 1, file);
-            read += sizeof(uint32_t);
-
-            value = ntohl(value);
-            printf("%d,\n", value);
-            break;
-        default:
-            printf("\n");
-    }
+    printf("}\n");
+    read++;
 
     return read;
 }
@@ -194,9 +183,11 @@ size_t read_next(FILE* file, struct table tab) {
 void readVDFBlob(FILE* file, size_t end, struct table tab) {
     const size_t bytes_to_read = end - ftell(file);
     size_t read = 0;
-    while(read < bytes_to_read) {
-        read += read_next(file, tab);
+    read += read_next(file, tab);
 
-    }
+    
+    printf("\nBytes to read: %ld", bytes_to_read);
+    printf("\nBytes READ: %ld", read);
+    printf("\nCursor pos: %ld", ftell(file));
 }
 
