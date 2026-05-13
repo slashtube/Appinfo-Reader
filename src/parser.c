@@ -37,9 +37,7 @@ int parse(char* filename) {
 
     init_appentry(&entry);
     
-    int i = 0;
-
-    while(i < 1) {
+    while(true) {
         // Appid check
         fread(&entry.appid, sizeof(uint32_t), 1, file);
         if(entry.appid == 0) {
@@ -48,9 +46,8 @@ int parse(char* filename) {
 
         size_t end = parse_entry(file, &entry, head.magic);
         print_entry(entry);
-
         readVDFBlob(file, end, tab);
-        i++;
+
     }
 
 
@@ -85,12 +82,6 @@ int parse_table(FILE* file, struct table* tab, long offset) {
 
     for(uint32_t i = 0; i < tab->count; i++) {
         readNullString(file, *(tab->strings + i));
-        // DEBUG
-         /*if( i > 90 && i < 120) {
-            printf("\n%s ", *(tab->strings + i));
-        }
-        */
-        
     }
 
 
@@ -140,7 +131,6 @@ void readNullString(FILE* file, char* string) {
 
 size_t read_next(FILE* file, struct table tab) {
     char type;
-    uint32_t pos;
     size_t read = 0;
 
     // Gets type
@@ -148,12 +138,7 @@ size_t read_next(FILE* file, struct table tab) {
 
     while(type != MAP_END) {
         // String deduplication
-        fread(&pos, sizeof(uint32_t), 1, file);
-        read += 4;
-        char* string = *(tab.strings + pos);
-        if(string != NULL && pos != 0) {
-            printf("\t%s: ", string);
-        }
+        read += get_name(file, tab);
 
         // Gets and writes value based on type
         switch(type) {
@@ -175,7 +160,6 @@ size_t read_next(FILE* file, struct table tab) {
     }
 
     printf("}\n");
-    read++;
 
     return read;
 }
@@ -183,11 +167,9 @@ size_t read_next(FILE* file, struct table tab) {
 void readVDFBlob(FILE* file, size_t end, struct table tab) {
     const size_t bytes_to_read = end - ftell(file);
     size_t read = 0;
-    read += read_next(file, tab);
 
-    
-    printf("\nBytes to read: %ld", bytes_to_read);
-    printf("\nBytes READ: %ld", read);
-    printf("\nCursor pos: %ld", ftell(file));
+    while(read < bytes_to_read) {
+        read += read_next(file, tab);
+    }
 }
 

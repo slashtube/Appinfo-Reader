@@ -18,6 +18,7 @@ void print_header(struct header head);
 void print_table(struct table tab);
 void print_entry(struct appentry entry);
 
+size_t get_name(FILE* file, struct table tab); 
 size_t read_int(FILE* file);
 size_t read_string(FILE* file);
 

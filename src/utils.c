@@ -70,14 +70,28 @@ void print_entry(struct appentry entry) {
  //   printf("entry.binaryhash: %s\n", entry.binaryhash);
 }
 
+size_t get_name(FILE* file, struct table tab) {
+    size_t read = 0;
+    uint32_t pos;
+
+    fread(&pos, sizeof(uint32_t), 1, file);
+    read += sizeof(uint32_t);
+
+    char* string = *(tab.strings + pos);
+    if(string != NULL && pos != 0) {
+        printf("\t%s: ", string);
+    }
+
+    return read;
+}
+
 size_t read_int(FILE* file) {
     uint32_t value = 0;
     size_t read = 0;
 
     fread(&value, sizeof(uint32_t), 1, file);
-    read += sizeof(uint32_t);
+    read = sizeof(uint32_t);
 
-    //value = ntohl(value);
     printf("%d,\n", value);
 
     return read;
@@ -85,11 +99,7 @@ size_t read_int(FILE* file) {
 
 size_t read_string(FILE* file) {
     size_t read = 0;
-    char temp;
-    char string[32];
-
-    // 3 zeros to mark beginning of string
-    read += fread(&temp, sizeof(char), 3, file);
+    char string[1024];
 
     readNullString(file, string);
     read += strlen(string) + 1;
