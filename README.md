@@ -9,8 +9,8 @@ git clone https://github.com/slashtube/Appinfo-Reader.git
 cd Appinfo-Reader/
 make
 ```
-You can now either move the `appinfo.vdf` file in the current directory or move the `getinfo` executable in the `appcache` folder and then execute the
+You can now either move the `appinfo.vdf` file in the current directory or move the `appreader` executable in the `appcache` folder and then execute the
 program using
 ```
-./getinfo appinfo.vdf > out.txt
+./appreader appinfo.vdf > out.txt
 ```
