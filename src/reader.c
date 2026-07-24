@@ -22,7 +22,7 @@
     Gets the name used to identify a map entry and deduplicates it using the table
 */
 
-size_t get_name(FILE* file, struct table tab) {
+static size_t get_name(FILE* file, struct table tab) {
     size_t read = 0;
     uint32_t pos;
 
@@ -42,7 +42,7 @@ size_t get_name(FILE* file, struct table tab) {
     Used for reading int values
 */
 
-size_t read_int(FILE* file) {
+static size_t read_int(FILE* file) {
     uint32_t value = 0;
     size_t read = 0;
 
@@ -54,12 +54,10 @@ size_t read_int(FILE* file) {
     return read;
 }
 
-
 /*
     Used for reading null terminated string values
 */
-
-size_t read_string(FILE* file) {
+static size_t read_string(FILE* file) {
     size_t read = 0;
     char string[1024];
 
@@ -70,27 +68,11 @@ size_t read_string(FILE* file) {
     return read;
 }
 
-
-/*
-    Aux function for read_string
-*/
-
-void readNullString(FILE* file, char* string) {
-    int i = 0;
-    char c;
-    while((c = fgetc(file)) != '\0') {
-        *(string + i++) = c;
-    }
-
-    *(string + i) = '\0';
-
-}
-
 /*
     Core reading function. Recursively reads for bytes until in reaches the MAP_END.
 */
 
-size_t read_next(FILE* file, struct table tab) {
+static size_t read_next(FILE* file, struct table tab) {
     char type;
     size_t read = 0;
 
@@ -123,6 +105,21 @@ size_t read_next(FILE* file, struct table tab) {
     printf("}\n");
 
     return read;
+}
+
+/*
+    Aux function for read_string
+*/
+
+void readNullString(FILE* file, char* string) {
+    int i = 0;
+    char c;
+    while((c = fgetc(file)) != '\0') {
+        *(string + i++) = c;
+    }
+
+    *(string + i) = '\0';
+
 }
 
 /*
