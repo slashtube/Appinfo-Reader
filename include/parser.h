@@ -2,16 +2,12 @@
 #define PARSER_H
 
 #include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
 
 #define VERSION_36 0x07564424
 #define VERSION_38 0x07564426
 #define VERSION_40 0x07564428
-
-#define TYPE_MAP 0x00
-#define TYPE_STRING 0x01
-#define TYPE_INT 0x02
-#define TYPE_UINT64 0x07
-#define MAP_END 0x08
 
 struct header {
     uint32_t magic;
@@ -40,8 +36,6 @@ int parse(char* filename);
 int parse_header(FILE* file, struct header* head);
 int parse_table(FILE* file, struct table* tab, long offset);
 size_t parse_entry(FILE* file, struct appentry* entry, uint32_t version);
-void readNullString(FILE* file, char* string);
-size_t read_next(FILE* file, struct table tab);
-void readVDFBlob(FILE* file, size_t end, struct table tab);
+
 
 #endif

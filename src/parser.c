@@ -5,7 +5,12 @@
 #include <arpa/inet.h>
 #include "../include/parser.h"
 #include "../include/utils.h"
+#include "../include/reader.h"
 
+/*
+    Main parsing function.
+    Calls the parse_header, parse_table and parses all the app entries of the file.
+*/
 
 int parse(char* filename) {
     FILE* file = fopen(filename, "rb");
@@ -37,7 +42,7 @@ int parse(char* filename) {
 
     init_appentry(&entry);
     
-    while(true) {
+    while(1) {
         // Appid check
         fread(&entry.appid, sizeof(uint32_t), 1, file);
         if(entry.appid == 0) {
@@ -46,10 +51,11 @@ int parse(char* filename) {
 
         size_t end = parse_entry(file, &entry, head.magic);
         print_entry(entry);
+
+        // Reads appentry data
         readVDFBlob(file, end, tab);
 
     }
-
 
     free_appentry(&entry);
     free_table(&tab);
@@ -59,7 +65,9 @@ int parse(char* filename) {
 }
 
 /*
-   Parses the header, if successful returns the number of fields correctly read (3)
+   Parses the header:
+    - Checks the magic field
+    - Reads the string table offset if field is > 40
 */
 
 int parse_header(FILE* file, struct header* head) {
@@ -70,6 +78,11 @@ int parse_header(FILE* file, struct header* head) {
 
     return ret;
 }
+
+/*
+   Parses the table used for string deduplication.
+   Only used for versions > 40
+*/
 
 int parse_table(FILE* file, struct table* tab, long offset) {
     long prev_offset = ftell(file);
@@ -92,11 +105,14 @@ int parse_table(FILE* file, struct table* tab, long offset) {
     return ret;
 }
 
+/*
+    Parses AppEntry info before reading the binary vdf data
+*/
+
 size_t parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
     entry->section = 0;
 
-
-    // Gets the end position of the cursor
+    // Gets the end position of the binary vdf data
     fread(&entry->size, sizeof(uint32_t), 1, file);
     size_t end = ftell(file) + entry->size;
 
@@ -118,58 +134,5 @@ size_t parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
     return end;
 }
 
-void readNullString(FILE* file, char* string) {
-    int i = 0;
-    char c;
-    while((c = fgetc(file)) != '\0') {
-        *(string + i++) = c;
-    }
 
-    *(string + i) = '\0';
-
-}
-
-size_t read_next(FILE* file, struct table tab) {
-    char type;
-    size_t read = 0;
-
-    // Gets type
-    read += fread(&type, sizeof(char), 1, file);
-
-    while(type != MAP_END) {
-        // String deduplication
-        read += get_name(file, tab);
-
-        // Gets and writes value based on type
-        switch(type) {
-            case TYPE_MAP: 
-                printf("{\n ");
-                read += read_next(file, tab);
-                return read;
-            case TYPE_STRING: 
-                read += read_string(file);
-                break;
-            case TYPE_INT: 
-                read += read_int(file);
-                break;
-            default:
-                printf("Type: %x not supported", type);
-        }
-
-        read += fread(&type, sizeof(char), 1, file);
-    }
-
-    printf("}\n");
-
-    return read;
-}
-
-void readVDFBlob(FILE* file, size_t end, struct table tab) {
-    const size_t bytes_to_read = end - ftell(file);
-    size_t read = 0;
-
-    while(read < bytes_to_read) {
-        read += read_next(file, tab);
-    }
-}
 

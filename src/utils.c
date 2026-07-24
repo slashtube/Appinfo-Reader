@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <time.h>
 #include "../include/utils.h"
 
+/*
+    ------ ALLOCATION AND DEALLOCATION ------
+*/
 
 void init_table(struct table* tab) {
     tab->strings = malloc(sizeof(char*) * tab->count);
@@ -37,6 +39,14 @@ void free_appentry(struct appentry* entry) {
     free(entry->texthash);
 }
 
+
+/*
+    ------ PRINT FUNCTIONS ------
+
+    These functions should only be used for debugging but for now they are the only way to 
+    actually get the output of the program.
+*/
+
 void print_UnixTime(uint32_t lastupdate) {
     time_t raw = (time_t) lastupdate;
     struct tm ts = *localtime(&raw);
@@ -64,48 +74,10 @@ void print_entry(struct appentry entry) {
     printf("entry.info: %d\n", entry.info);
     print_UnixTime(entry.lastupdate);
     printf("entry.pics: %ld\n", entry.pics);
-//    printf("entry.texthash: %s\n", entry.texthash);
+    //printf("entry.texthash: %02x\n", entry.texthash);
     printf("entry.changenum: %d\n", entry.changenum);
     printf("entry.section: %d\n", entry.section);
- //   printf("entry.binaryhash: %s\n", entry.binaryhash);
-}
-
-size_t get_name(FILE* file, struct table tab) {
-    size_t read = 0;
-    uint32_t pos;
-
-    fread(&pos, sizeof(uint32_t), 1, file);
-    read += sizeof(uint32_t);
-
-    char* string = *(tab.strings + pos);
-    if(string != NULL && pos != 0) {
-        printf("\t%s: ", string);
-    }
-
-    return read;
-}
-
-size_t read_int(FILE* file) {
-    uint32_t value = 0;
-    size_t read = 0;
-
-    fread(&value, sizeof(uint32_t), 1, file);
-    read = sizeof(uint32_t);
-
-    printf("%d,\n", value);
-
-    return read;
-}
-
-size_t read_string(FILE* file) {
-    size_t read = 0;
-    char string[1024];
-
-    readNullString(file, string);
-    read += strlen(string) + 1;
-    printf("'%s',\n", string);
-
-    return read;
+    //printf("entry.binaryhash: %02x\n", entry.binaryhash);
 }
 
 

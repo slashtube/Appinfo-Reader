@@ -10,8 +10,6 @@ int main(int argc, char** argv) {
 
 	char* file = argv[1];
 
-	// Idealmente
-	// parsefile (implementato in parser.c) legge il file e utilizzando writer.c lo scrive su un file di testo
     int status = parse(file);
 
     if(status < 0) {

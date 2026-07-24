@@ -9,7 +9,7 @@
 # See http://creativecommons.org/publicdomain/zero/1.0/
 
 # Output binary
-BIN = getinfo
+BIN = appinfo-reader
 
 # Put all auto generated stuff to this build dir.
 BUILD_DIR = ./build
@@ -20,7 +20,7 @@ SOURCE_DIR = src
 SOURCE = \
 	main.c \
 	parser.c \
-	writer.c \
+	reader.c \
     utils.c \
 
 INCLUDES = \
