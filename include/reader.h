@@ -10,7 +10,7 @@
 #define TYPE_INT 0x02
 #define MAP_END 0x08
 
-void readNullString(FILE* file, char* string);
-void readVDFBlob(FILE* file, size_t end, struct table tab);
+void readNullString(char* string);
+void readVDFBlob(size_t end, struct table tab);
 
 #endif

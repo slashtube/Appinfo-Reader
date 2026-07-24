@@ -9,6 +9,9 @@
 #define VERSION_38 0x07564426
 #define VERSION_40 0x07564428
 
+extern FILE* in;
+extern FILE* out;
+
 struct header {
     uint32_t magic;
     uint32_t universe;
@@ -26,10 +29,10 @@ struct appentry {
     uint32_t info;
     uint32_t lastupdate;
     uint64_t pics;
-    char* texthash; // hash da 20 byte per appinfo VDF
+    char* texthash;
     uint32_t changenum;
     uint8_t section;
-    char* binaryhash; // hash da 20 byte per VDF data
+    char* binaryhash;
 };
 
 int parse(char* filename);

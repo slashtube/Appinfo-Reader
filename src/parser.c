@@ -7,16 +7,19 @@
 #include "../include/utils.h"
 #include "../include/reader.h"
 
+FILE* in = NULL;
+FILE* out = NULL;
+
 /*
    Parses the header:
     - Checks the magic field
     - Reads the string table offset if field is > 40
 */
 
-static int parse_header(FILE* file, struct header* head) {
-    size_t ret = fread(head, sizeof(head->magic), 2, file);
+static int parse_header(struct header* head) {
+    size_t ret = fread(head, sizeof(head->magic), 2, in);
     if(head->magic > VERSION_40) {
-        ret += fread(&head->offset, sizeof(head->offset), 1, file);
+        ret += fread(&head->offset, sizeof(head->offset), 1, in);
     }
 
     return ret;
@@ -27,22 +30,22 @@ static int parse_header(FILE* file, struct header* head) {
    Only used for versions > 40
 */
 
-static int parse_table(FILE* file, struct table* tab, long offset) {
-    long prev_offset = ftell(file);
+static int parse_table(struct table* tab, long offset) {
+    long prev_offset = ftell(in);
 
-    fseek(file, offset, SEEK_SET);
-    size_t ret = fread(tab, sizeof(tab->count), 1, file);
+    fseek(in, offset, SEEK_SET);
+    size_t ret = fread(tab, sizeof(tab->count), 1, in);
 
     print_table(*tab);
     init_table(tab);
 
     for(uint32_t i = 0; i < tab->count; i++) {
-        readNullString(file, *(tab->strings + i));
+        readNullString(*(tab->strings + i));
     }
 
 
     // restores previous offset
-    fseek(file, prev_offset, SEEK_SET);
+    fseek(in, prev_offset, SEEK_SET);
 
 
     return ret;
@@ -52,48 +55,46 @@ static int parse_table(FILE* file, struct table* tab, long offset) {
     Parses AppEntry info before reading the binary vdf data
 */
 
-static size_t parse_entry(FILE* file, struct appentry* entry, uint32_t version) {
+static size_t parse_entry(struct appentry* entry, uint32_t version) {
     entry->section = 0;
 
     // Gets the end position of the binary vdf data
-    fread(&entry->size, sizeof(uint32_t), 1, file);
-    size_t end = ftell(file) + entry->size;
+    fread(&entry->size, sizeof(uint32_t), 1, in);
+    size_t end = ftell(in) + entry->size;
 
-    fread(&entry->info, sizeof(uint32_t), 2, file);
+    fread(&entry->info, sizeof(uint32_t), 2, in);
 
-    fread(&entry->pics, sizeof(entry->pics), 1, file);
-    fread(entry->texthash, sizeof(char), 20, file);
-    fread(&entry->changenum, sizeof(entry->changenum), 1, file);
+    fread(&entry->pics, sizeof(entry->pics), 1, in);
+    fread(entry->texthash, sizeof(char), 20, in);
+    fread(&entry->changenum, sizeof(entry->changenum), 1, in);
 
     if(version < VERSION_38) {
-        fread(&entry->section, sizeof(entry->section), 1, file);
+        fread(&entry->section, sizeof(entry->section), 1, in);
     } 
 
     if(version >= VERSION_40) {
-        fread(entry->binaryhash, sizeof(char), 20, file);
+        fread(entry->binaryhash, sizeof(char), 20, in);
     }
 
 
     return end;
 }
 
-
-
 /*
     Main parsing function.
-    Calls the parse_header, parse_table and parses all the app entries of the file.
+    Calls the parse_header, parse_table and parses all the app entries of the in.
 */
 
 int parse(char* filename) {
-    FILE* file = fopen(filename, "rb");
-    if(!file) {
-        perror("Error while opening specified file");
+    in = fopen(filename, "rb");
+    if(!in) {
+        perror("Error while opening specified in");
         return -1;
     }
 
     // Header parsing
     struct header head;
-    int ret = parse_header(file, &head);
+    int ret = parse_header( &head);
 
     if(ret < 3) {
         perror("Error while parsing header\n");
@@ -105,7 +106,7 @@ int parse(char* filename) {
     // String table parsing if version is greater than 40
     struct table tab; 
     if(head.magic > VERSION_40) {
-        parse_table(file, &tab, head.offset);
+        parse_table(&tab, head.offset);
 
     }
 
@@ -116,22 +117,22 @@ int parse(char* filename) {
     
     while(1) {
         // Appid check
-        fread(&entry.appid, sizeof(uint32_t), 1, file);
+        fread(&entry.appid, sizeof(uint32_t), 1, in);
         if(entry.appid == 0) {
             break;
         }
 
-        size_t end = parse_entry(file, &entry, head.magic);
+        size_t end = parse_entry(&entry, head.magic);
         print_entry(entry);
 
         // Reads appentry data
-        readVDFBlob(file, end, tab);
+        readVDFBlob( end, tab);
 
     }
 
     free_appentry(&entry);
     free_table(&tab);
-    fclose(file);
+    fclose(in);
 
     return 0;
 }
