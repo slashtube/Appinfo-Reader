@@ -70,7 +70,7 @@ static size_t read_string() {
 
     readNullString(string);
     read += strlen(string) + 1;
-    
+
     fwrite(string, sizeof(char), strlen(string), out);
     fwrite(",\n", sizeof(char), strlen(",\n"), out);
 
@@ -78,7 +78,7 @@ static size_t read_string() {
 }
 
 /*
-    Core reading function. Recursively reads for bytes until in reaches the MAP_END.
+    Core reading function. Recursively reads for bytes until it reaches the MAP_END.
 */
 
 static size_t read_next(struct table tab) {

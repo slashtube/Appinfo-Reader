@@ -18,9 +18,7 @@ FILE* out = NULL;
 
 static int parse_header(struct header* head) {
     size_t ret = fread(head, sizeof(head->magic), 2, in);
-    if(head->magic > VERSION_40) {
-        ret += fread(&head->offset, sizeof(head->offset), 1, in);
-    }
+    ret += fread(&head->offset, sizeof(head->offset), 1, in);
 
     return ret;
 }
@@ -36,13 +34,11 @@ static int parse_table(struct table* tab, long offset) {
     fseek(in, offset, SEEK_SET);
     size_t ret = fread(tab, sizeof(tab->count), 1, in);
 
-    print_table(*tab);
     init_table(tab);
 
     for(uint32_t i = 0; i < tab->count; i++) {
         readNullString(*(tab->strings + i));
     }
-
 
     // restores previous offset
     fseek(in, prev_offset, SEEK_SET);
@@ -68,13 +64,12 @@ static size_t parse_entry(struct appentry* entry, uint32_t version) {
     fread(entry->texthash, sizeof(char), 20, in);
     fread(&entry->changenum, sizeof(entry->changenum), 1, in);
 
+    /* I'll leave this here if in the future i want to support older versions */
     if(version < VERSION_38) {
         fread(&entry->section, sizeof(entry->section), 1, in);
     } 
 
-    if(version >= VERSION_40) {
-        fread(entry->binaryhash, sizeof(char), 20, in);
-    }
+    fread(entry->binaryhash, sizeof(char), 20, in);
 
 
     return end;
@@ -87,8 +82,6 @@ static size_t parse_entry(struct appentry* entry, uint32_t version) {
 
 int parse(const char* inputfile, const char* outputfile) {
     in = fopen(inputfile, "rb");
-    out = fopen(outputfile, "w");
-
 
     if(!in) {
         perror("Error while opening specified in");
@@ -101,20 +94,22 @@ int parse(const char* inputfile, const char* outputfile) {
 
     if(ret < 3) {
         perror("Error while parsing header\n");
+        fclose(in);
+        return -1;
+    } else if(head.magic < VERSION_40) {
+        perror("Version lower than 41 not supported\n");
+        fclose(in);
         return -1;
     }
 
-    print_header(head);
-
-    // String table parsing if version is greater than 40
+    // Table parsing
     struct table tab; 
-    if(head.magic > VERSION_40) {
-        parse_table(&tab, head.offset);
-
-    }
-
+    parse_table(&tab, head.offset);
+    
     // AppEntry parsing
     struct appentry entry;
+    out = fopen(outputfile, "w");
+
 
     init_appentry(&entry);
     
@@ -126,9 +121,6 @@ int parse(const char* inputfile, const char* outputfile) {
         }
 
         size_t end = parse_entry(&entry, head.magic);
-
-        // Debug only
-        //print_entry(entry);
 
         // Reads appentry data
         readVDFBlob(end, tab);

@@ -43,8 +43,7 @@ void free_appentry(struct appentry* entry) {
 /*
     ------ PRINT FUNCTIONS ------
 
-    These functions should only be used for debugging but for now they are the only way to 
-    actually get the output of the program.
+    These functions should only be used for debugging.
 */
 
 void print_UnixTime(uint32_t lastupdate) {
