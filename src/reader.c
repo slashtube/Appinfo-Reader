@@ -1,5 +1,6 @@
 #include "../include/reader.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 /*
@@ -31,7 +32,9 @@ static size_t get_name(struct table tab) {
 
     char* string = *(tab.strings + pos);
     if(string != NULL && pos != 0) {
-        printf("\t%s: ", string);
+        fwrite("\t", sizeof(char), strlen("\t"), out);
+        fwrite(string, sizeof(char), strlen(string), out);
+        fwrite(": ", sizeof(char), strlen(": "), out);
     }
 
     return read;
@@ -49,7 +52,11 @@ static size_t read_int() {
     fread(&value, sizeof(uint32_t), 1, in);
     read = sizeof(uint32_t);
 
-    printf("%d,\n", value);
+    char temp[16];
+
+    snprintf(temp, sizeof(temp), "%d,\n", value);
+
+    fwrite(temp, sizeof(char), strlen(temp), out);
 
     return read;
 }
@@ -63,7 +70,9 @@ static size_t read_string() {
 
     readNullString(string);
     read += strlen(string) + 1;
-    printf("'%s',\n", string);
+    
+    fwrite(string, sizeof(char), strlen(string), out);
+    fwrite(",\n", sizeof(char), strlen(",\n"), out);
 
     return read;
 }
@@ -86,7 +95,7 @@ static size_t read_next(struct table tab) {
         // Gets and writes value based on type
         switch(type) {
             case TYPE_MAP: 
-                printf("{\n ");
+                fwrite("{\n", sizeof(char), strlen("{\n"), out);
                 read += read_next( tab);
                 return read;
             case TYPE_STRING: 
@@ -102,7 +111,7 @@ static size_t read_next(struct table tab) {
         read += fread(&type, sizeof(char), 1, in);
     }
 
-    printf("}\n");
+    fwrite("}\n", sizeof(char), strlen("}\n"), out);
 
     return read;
 }

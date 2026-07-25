@@ -18,7 +18,4 @@ void print_header(struct header head);
 void print_table(struct table tab);
 void print_entry(struct appentry entry);
 
-
-
-
 #endif

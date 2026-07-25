@@ -35,7 +35,7 @@ struct appentry {
     char* binaryhash;
 };
 
-int parse(char* filename);
+int parse(const char* filename, const char* outputfile);
 
 
 #endif

@@ -85,8 +85,11 @@ static size_t parse_entry(struct appentry* entry, uint32_t version) {
     Calls the parse_header, parse_table and parses all the app entries of the in.
 */
 
-int parse(char* filename) {
-    in = fopen(filename, "rb");
+int parse(const char* inputfile, const char* outputfile) {
+    in = fopen(inputfile, "rb");
+    out = fopen(outputfile, "w");
+
+
     if(!in) {
         perror("Error while opening specified in");
         return -1;
@@ -123,15 +126,18 @@ int parse(char* filename) {
         }
 
         size_t end = parse_entry(&entry, head.magic);
-        print_entry(entry);
+
+        // Debug only
+        //print_entry(entry);
 
         // Reads appentry data
-        readVDFBlob( end, tab);
+        readVDFBlob(end, tab);
 
     }
 
     free_appentry(&entry);
     free_table(&tab);
+    fclose(out);
     fclose(in);
 
     return 0;

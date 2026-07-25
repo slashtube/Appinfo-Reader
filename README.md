@@ -12,5 +12,6 @@ make
 You can now either move the `appinfo.vdf` file in the current directory or move the `appreader` executable in the `appcache` folder and then execute the
 program using
 ```
-./appreader appinfo.vdf > out.txt
+./appreader appinfo.vdf
 ```
+You can find the output in the `out.txt` file.
